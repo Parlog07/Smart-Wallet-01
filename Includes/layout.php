@@ -25,12 +25,6 @@
         🏠 Dashboard
       </a>
 
-      <!-- Cards -->
-      <a href="/php/Income-Expenses-Tracker/Cards/index.php"
-         class="flex items-center gap-3 px-3 py-2 rounded hover:bg-purple-50">
-        💳 Cards
-      </a>
-
       <!-- Incomes -->
       <a href="/php/Income-Expenses-Tracker/Incomes/index.php"
          class="flex items-center gap-3 px-3 py-2 rounded hover:bg-green-50">

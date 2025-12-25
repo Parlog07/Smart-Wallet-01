@@ -1,4 +1,4 @@
--- Active: 1764673028424@@127.0.0.1@3306@smart-wallet
+-- Active: 1764673028424@@127.0.0.1@3306@money_wallet
 create table incomes(
     id INT AUTO_INCREMENT PRIMARY KEY,
     amount DECIMAL(10,2) NOT NULL,
@@ -138,3 +138,7 @@ INSERT INTO categories (name) VALUES
 ('Health'),
 ('Internet'),
 ('Other');
+DROP TABLE IF EXISTS cards;
+DROP TABLE IF EXISTS transfers;
+ALTER TABLE incomes DROP COLUMN card_id;
+ALTER TABLE expenses DROP COLUMN card_id;

@@ -1,16 +1,25 @@
 <?php
-require_once "../Includes/db.php";
+session_start();
+
+require_once "../classes/Database.php";
+require_once "../classes/User.php";
 
 $errors = [];
+$success = false;
+
+$db = new Database();
+$pdo = $db->connect();
+$userModel = new User($pdo);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $full_name = trim($_POST["full_name"]);
-    $email     = trim($_POST["email"]);
-    $password  = $_POST["password"];
+    $name     = trim($_POST["name"] ?? "");
+    $email    = trim($_POST["email"] ?? "");
+    $password = $_POST["password"] ?? "";
+    $confirm  = $_POST["confirm_password"] ?? "";
 
-    if (empty($full_name)) {
-        $errors[] = "Full name is required";
+    if (empty($name)) {
+        $errors[] = "Name is required";
     }
 
     if (empty($email)) {
@@ -25,27 +34,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errors[] = "Password must be at least 6 characters";
     }
 
-    if (empty($errors)) {
-        $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        if ($stmt->fetch()) {
-            $errors[] = "Email already exists";
-        }
+    if ($password !== $confirm) {
+        $errors[] = "Passwords do not match";
     }
 
     if (empty($errors)) {
-        $stmt = $pdo->prepare("
-            INSERT INTO users (full_name, email, password, created_at)
-            VALUES (?, ?, ?, NOW())
-        ");
-        $stmt->execute([
-            $full_name,
-            $email,
-            password_hash($password, PASSWORD_DEFAULT)
-        ]);
+        $created = $userModel->register($name, $email, $password);
 
-        header("Location: login.php");
-        exit;
+        if ($created) {
+            $success = true;  
+             header("Location: login.php");
+             exit;
+        } else {
+            $errors[] = "Registration failed. Email may already exist.";
+        }
     }
 }
 ?>

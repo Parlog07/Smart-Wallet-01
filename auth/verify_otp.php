@@ -1,6 +1,17 @@
 <?php
 session_start();
+
+require_once "../classes/Database.php";
+require_once "../classes/User.php";
+
 $error = "";
+
+if (
+    !isset($_SESSION["otp"], $_SESSION["otp_expires"], $_SESSION["otp_user_id"])
+) {
+    header("Location: login.php");
+    exit;
+}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -12,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $inputOtp == $_SESSION["otp"]
     ) {
         $_SESSION["user_id"] = $_SESSION["otp_user_id"];
-
+ 
         unset($_SESSION["otp"], $_SESSION["otp_expires"], $_SESSION["otp_user_id"]);
 
         header("Location: ../index.php");

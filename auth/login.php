@@ -7,8 +7,8 @@ require_once "../Includes/mailer.php";
 
 $errors = [];
 
-// $db = new Database();
-// $pdo = $db->connect();
+$db = new Database();
+$pdo = $db->connect();
 $userModel = new User($pdo);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
