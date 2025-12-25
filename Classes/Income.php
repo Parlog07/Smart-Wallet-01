@@ -11,42 +11,47 @@ class Income
 
     public function create($userId, $amount, $description, $date)
     {
-        // Basic validation
         if ($amount <= 0 || empty($date)) {
             return false;
         }
 
-        $sql = "INSERT INTO incomes (user_id, amount, description, date)
-                VALUES (?, ?, ?, ?)";
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO incomes (user_id, amount, description, date)
+             VALUES (?, ?, ?, ?)"
+        );
 
-        $stmt = $this->pdo->prepare($sql);
-
-        return $stmt->execute([
-            $userId,
-            $amount,
-            $description,
-            $date
-        ]);
+        return $stmt->execute([$userId, $amount, $description, $date]);
     }
 
     public function getAllByUser($userId)
     {
-        $sql = "SELECT * FROM incomes
-                WHERE user_id = ?
-                ORDER BY date DESC";
-
-        $stmt = $this->pdo->prepare($sql);
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM incomes
+             WHERE user_id = ?
+             ORDER BY date DESC"
+        );
         $stmt->execute([$userId]);
-
         return $stmt->fetchAll();
+    }
+
+    public function update($id, $userId, $amount, $description, $date)
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE incomes
+             SET amount = ?, description = ?, date = ?
+             WHERE id = ? AND user_id = ?"
+        );
+
+        return $stmt->execute([$amount, $description, $date, $id, $userId]);
     }
 
     public function delete($id, $userId)
     {
-        $sql = "DELETE FROM incomes
-                WHERE id = ? AND user_id = ?";
+        $stmt = $this->pdo->prepare(
+            "DELETE FROM incomes
+             WHERE id = ? AND user_id = ?"
+        );
 
-        $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$id, $userId]);
     }
 }
