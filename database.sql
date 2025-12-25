@@ -142,3 +142,6 @@ DROP TABLE IF EXISTS cards;
 DROP TABLE IF EXISTS transfers;
 ALTER TABLE incomes DROP COLUMN card_id;
 ALTER TABLE expenses DROP COLUMN card_id;
+ALTER TABLE expenses DROP COLUMN category_id;
+DESCRIBE expenses;
+ALTER TABLE expenses DROP FOREIGN KEY fk_expenses_category;

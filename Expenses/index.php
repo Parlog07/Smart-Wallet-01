@@ -1,195 +1,161 @@
 <?php
-require_once "../Includes/auth.php";
-require_once "../Includes/db.php";
-include "../Includes/layout.php";
+session_start();
 
-$user_id = $_SESSION["user_id"];
-$stmt = $pdo->query("SELECT id, name FROM categories");
-$categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+require_once "../Classes/Database.php";
+require_once "../Classes/Expense.php";
 
-$stmt = $pdo->prepare("
-    SELECT id, provider, is_main
-    FROM cards
-    WHERE user_id = ?
-");
-$stmt->execute([$user_id]);
-$cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
 
-$stmt = $pdo->prepare("
-    SELECT 
-        expenses.*,
-        cards.provider AS card_provider,
-        cards.card_last4
-    FROM expenses
-    JOIN cards ON expenses.card_id = cards.id
-    WHERE expenses.user_id = ?
-    ORDER BY expenses.date DESC, expenses.id DESC
-");
-$stmt->execute([$user_id]);
-$expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$db = new Database();
+$pdo = $db->connect();
+
+$expenseModel = new Expense($pdo);
+$userId = $_SESSION['user_id'];
+
+$expenses = $expenseModel->getAllByUser($userId);
 ?>
 
-<div class="flex items-center justify-between mb-6">
-  <h2 class="text-2xl font-bold">Expenses</h2>
-  <button id="openAddExpense"
-          class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-    + Add Expense
-  </button>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expenses</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
 
-<div class="bg-white rounded shadow overflow-hidden">
-  <table class="min-w-full divide-y">
-    <thead class="bg-red-50">
-      <tr>
-        <th class="px-4 py-3 text-left text-sm">ID</th>
-        <th class="px-4 py-3 text-left text-sm">Amount</th>
-        <th class="px-4 py-3 text-left text-sm">Description</th>
-        <th class="px-4 py-3 text-left text-sm">Card</th>
-        <th class="px-4 py-3 text-left text-sm">Date</th>
-        <th class="px-4 py-3 text-left text-sm">Actions</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y">
-      <?php foreach ($expenses as $expense): ?>
-        <tr class="hover:bg-gray-50">
-          <td class="px-4 py-3"><?= $expense["id"] ?></td>
-          <td class="px-4 py-3"><?= number_format($expense["amount"], 2) ?> MAD</td>
-          <td class="px-4 py-3"><?= htmlspecialchars($expense["description"]) ?></td>
-          <td class="px-4 py-3">
-            <?= htmlspecialchars($expense["card_provider"]) ?>
-            ••••<?= htmlspecialchars($expense["card_last4"]) ?>
-          </td>
-          <td class="px-4 py-3"><?= htmlspecialchars($expense["date"]) ?></td>
-          <td class="px-4 py-3">
-            <button
-              class="edit-btn text-blue-600 hover:underline mr-3"
-              data-id="<?= $expense['id'] ?>"
-              data-amount="<?= $expense['amount'] ?>"
-              data-description="<?= htmlspecialchars($expense['description']) ?>"
-              data-date="<?= $expense['date'] ?>"
-              data-card="<?= $expense['card_id'] ?>"
-            >Edit</button>
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Expenses</h1>
+    <button id="openAddExpense"
+            class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+      + Add Expense
+    </button>
+  </div>
 
-            <a href="delete.php?id=<?= $expense['id'] ?>"
-               class="text-red-600 hover:underline"
-               onclick="return confirm('Delete this expense?');">
-              Delete
-            </a>
-          </td>
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Amount</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Description</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Date</th>
+          <th class="px-6 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
         </tr>
-      <?php endforeach; ?>
-    </tbody>
-  </table>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <?php foreach ($expenses as $expense): ?>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 font-semibold text-gray-700">
+              <?= number_format($expense['amount'], 2) ?> MAD
+            </td>
+            <td class="px-6 py-4 text-gray-700">
+              <?= htmlspecialchars($expense['description']) ?>
+            </td>
+            <td class="px-6 py-4 text-gray-600">
+              <?= $expense['date'] ?>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button
+                class="edit-btn text-blue-600 hover:underline mr-4"
+                data-id="<?= $expense['id'] ?>"
+                data-amount="<?= $expense['amount'] ?>"
+                data-description="<?= htmlspecialchars($expense['description']) ?>"
+                data-date="<?= $expense['date'] ?>"
+              >
+                Edit
+              </button>
+
+              <a href="delete.php?id=<?= $expense['id'] ?>"
+                 onclick="return confirm('Delete this expense?')"
+                 class="text-red-600 hover:underline">
+                Delete
+              </a>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
 </div>
 
-
-<div id="addModal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black/40">
-  <div class="bg-white w-full max-w-md rounded-lg p-6 shadow-lg">
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+  <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-lg font-bold">Add Expense</h3>
-      <button id="closeAdd" class="text-gray-500">&times;</button>
+      <button id="closeAdd" class="text-gray-500 text-xl">&times;</button>
     </div>
 
     <form method="POST" action="store.php" class="space-y-4">
-      <div>
-        <label class="block text-sm">Card</label>
-        <select name="card_id" required class="w-full border p-2 rounded">
-          <option value="">-- Select card --</option>
-          <?php foreach ($cards as $card): ?>
-            <option value="<?= $card['id'] ?>">
-              <?= htmlspecialchars($card['provider']) ?>
-              <?= $card['is_main'] ? '(Main)' : '' ?>
-            </option>
-          <?php endforeach; ?>
-        </select>
-      </div>
-            <div>
-  <label class="block text-sm">Category</label>
-  <select name="category_id" required class="w-full border p-2 rounded">
-    <option value="">-- Select category --</option>
-    <?php foreach ($categories as $cat): ?>
-      <option value="<?= $cat['id'] ?>">
-        <?= htmlspecialchars($cat['name']) ?>
-      </option>
-    <?php endforeach; ?>
-  </select>
-</div>
+      <input name="amount" type="number" step="0.01" required
+             placeholder="Amount"
+             class="w-full border p-2 rounded">
 
-      <div>
-        <label class="block text-sm">Amount</label>
-        <input name="amount" type="number" step="0.01" required class="w-full border p-2 rounded">
-      </div>
+      <input name="description" type="text" required
+             placeholder="Description"
+             class="w-full border p-2 rounded">
 
-      <div>
-        <label class="block text-sm">Description</label>
-        <input name="description" type="text" required class="w-full border p-2 rounded">
-      </div>
+      <input name="date" type="date" required
+             class="w-full border p-2 rounded">
 
-      <div>
-        <label class="block text-sm">Date</label>
-        <input name="date" type="date" required class="w-full border p-2 rounded">
-      </div>
-
-      <div class="flex justify-end">
-        <button type="button" id="closeAdd2" class="mr-2 px-4 py-2 border rounded">Cancel</button>
-        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Save</button>
+      <div class="flex justify-end gap-2">
+        <button type="button" id="closeAdd2"
+                class="px-4 py-2 border rounded">
+          Cancel
+        </button>
+        <button type="submit"
+                class="px-4 py-2 bg-red-600 text-white rounded">
+          Save
+        </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- =========================
-     EDIT MODAL
-     ========================= -->
-<div id="editModal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black/40">
-  <div class="bg-white w-full max-w-md rounded-lg p-6 shadow-lg">
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+  <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-lg font-bold">Edit Expense</h3>
-      <button id="closeEdit" class="text-gray-500">&times;</button>
+      <button id="closeEdit" class="text-gray-500 text-xl">&times;</button>
     </div>
 
-    <form id="editForm" method="POST">
-      <input type="hidden" name="card_id" id="editCard">
+    <form id="editForm" method="POST" class="space-y-4">
+      <input id="editAmount" name="amount" type="number" step="0.01" required
+             class="w-full border p-2 rounded">
 
-      <div>
-        <label class="block text-sm">Amount</label>
-        <input id="editAmount" name="amount" type="number" step="0.01" required class="w-full border p-2 rounded">
-      </div>
+      <input id="editDescription" name="description" type="text" required
+             class="w-full border p-2 rounded">
 
-      <div>
-        <label class="block text-sm">Description</label>
-        <input id="editDescription" name="description" type="text" required class="w-full border p-2 rounded">
-      </div>
+      <input id="editDate" name="date" type="date" required
+             class="w-full border p-2 rounded">
 
-      <div>
-        <label class="block text-sm">Date</label>
-        <input id="editDate" name="date" type="date" required class="w-full border p-2 rounded">
-      </div>
-
-      <div class="flex justify-end mt-4">
-        <button type="button" id="closeEdit2" class="mr-2 px-4 py-2 border rounded">Cancel</button>
-        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded">Update</button>
+      <div class="flex justify-end gap-2">
+        <button type="button" id="closeEdit2"
+                class="px-4 py-2 border rounded">
+          Cancel
+        </button>
+        <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded">
+          Update
+        </button>
       </div>
     </form>
   </div>
 </div>
-
-</main>
-</body>
-</html>
 
 <script>
 const show = el => el.classList.remove('hidden');
 const hide = el => el.classList.add('hidden');
 
-// Add modal
 const addModal = document.getElementById('addModal');
 document.getElementById('openAddExpense').onclick = () => show(addModal);
 ['closeAdd','closeAdd2'].forEach(id =>
   document.getElementById(id).onclick = () => hide(addModal)
 );
 
-// Edit modal
 const editModal = document.getElementById('editModal');
 document.querySelectorAll('.edit-btn').forEach(btn => {
   btn.onclick = () => {
@@ -204,3 +170,6 @@ document.querySelectorAll('.edit-btn').forEach(btn => {
   document.getElementById(id).onclick = () => hide(editModal)
 );
 </script>
+
+</body>
+</html>

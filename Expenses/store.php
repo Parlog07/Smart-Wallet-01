@@ -1,56 +1,34 @@
 <?php
-require_once "../Includes/auth.php";
-require_once "../Includes/db.php";
+session_start();
 
-$user_id     = $_SESSION["user_id"];
-$card_id     = $_POST["card_id"] ?? null;
-$category_id = $_POST["category_id"] ?? null;
-$amount      = $_POST["amount"] ?? null;
-$description = $_POST["description"] ?? null;
-$date        = $_POST["date"] ?? null;
+require_once "../classes/Database.php";
+require_once "../classes/Expense.php";
 
-if (!$card_id || !$category_id || !$amount || !$description || !$date) {
-    die("Invalid expense data");
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit;
 }
 
-$stmt = $pdo->prepare("
-    SELECT monthly_limit
-    FROM category_limits
-    WHERE user_id = ? AND category_id = ?
-");
-$stmt->execute([$user_id, $category_id]);
-$limit = $stmt->fetchColumn();
-
-if ($limit !== false) {
-    $stmt = $pdo->prepare("
-        SELECT COALESCE(SUM(amount),0)
-        FROM expenses
-        WHERE user_id = ?
-          AND category_id = ?
-          AND MONTH(date) = MONTH(CURRENT_DATE())
-          AND YEAR(date) = YEAR(CURRENT_DATE())
-    ");
-    $stmt->execute([$user_id, $category_id]);
-    $total = $stmt->fetchColumn();
-
-    if (($total + $amount) > $limit) {
-        die("Monthly limit exceeded for this category");
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: index.php");
+    exit;
 }
 
+$userId = $_SESSION['user_id'];
 
-$stmt = $pdo->prepare("
-    INSERT INTO expenses (user_id, card_id, category_id, amount, description, date)
-    VALUES (?, ?, ?, ?, ?, ?)
-");
-$stmt->execute([
-    $user_id,
-    $card_id,
-    $category_id,
-    $amount,
-    $description,
-    $date
-]);
+$amount = $_POST['amount'] ?? null;
+$description = $_POST['description'] ?? '';
+$date = $_POST['date'] ?? null;
+
+if (!$amount || !$date) {
+    die("Invalid input");
+}
+
+$db = new Database();
+$pdo = $db->connect();
+
+$expenseModel = new Expense($pdo);
+$expenseModel->create($userId, $amount, $description, $date);
 
 header("Location: index.php");
 exit;

@@ -1,16 +1,30 @@
 <?php
-require_once "../Includes/auth.php";
-require_once "../Includes/db.php";
+session_start();
 
-$user_id = $_SESSION["user_id"];
-$id = $_GET["id"];
-$amount = $_POST["amount"];
-$description = $_POST["description"];
-$date = $_POST["date"];
+require_once "../classes/Database.php";
+require_once "../classes/Expense.php";
 
-$stmt = $pdo->prepare("UPDATE expenses SET amount=?, description=?, date=? WHERE id=? AND user_id = ?");
-$stmt->execute([$amount, $description, $date, $id, $user_id]);
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
+
+$userId = $_SESSION['user_id'];
+$id = $_GET['id'] ?? null;
+$amount = $_POST['amount'] ?? null;
+$description = $_POST['description'] ?? null;
+$date = $_POST['date'] ?? null;
+
+if (!$id || !$amount || !$description || !$date) {
+    header("Location: index.php");
+    exit;
+}
+
+$db = new Database();
+$pdo = $db->connect();
+
+$expenseModel = new Expense($pdo);
+$expenseModel->update($id, $userId, $amount, $description, $date);
 
 header("Location: index.php");
 exit;
-?>
