@@ -25,48 +25,71 @@ $incomes = $incomeModel->getAllByUser($userId);
   <title>Incomes</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-6">
+<body class="bg-gray-100 min-h-screen">
 
-<h1 class="text-2xl font-bold mb-4">Incomes</h1>
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Incomes</h1>
+    <button id="openAddIncome"
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      + Add Income
+    </button>
+  </div>
 
-<button onclick="document.getElementById('addModal').classList.remove('hidden')"
-        class="mb-4 bg-blue-600 text-white px-4 py-2 rounded">
-  + Add Income
-</button>
+  <div class="bg-white rounded-xl shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Amount</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Description</th>
+          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Date</th>
+          <th class="px-6 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        <?php foreach ($incomes as $income): ?>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 font-semibold text-gray-700">
+              <?= number_format($income['amount'], 2) ?> MAD
+            </td>
+            <td class="px-6 py-4 text-gray-700">
+              <?= htmlspecialchars($income['description']) ?>
+            </td>
+            <td class="px-6 py-4 text-gray-600">
+              <?= $income['date'] ?>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button
+                class="edit-btn text-blue-600 hover:underline mr-4"
+                data-id="<?= $income['id'] ?>"
+                data-amount="<?= $income['amount'] ?>"
+                data-description="<?= htmlspecialchars($income['description']) ?>"
+                data-date="<?= $income['date'] ?>"
+              >
+                Edit
+              </button>
 
-<table class="bg-white w-full rounded shadow">
-  <thead class="bg-gray-200">
-    <tr>
-      <th class="p-2">Amount</th>
-      <th class="p-2">Description</th>
-      <th class="p-2">Date</th>
-      <th class="p-2">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    <?php foreach ($incomes as $income): ?>
-      <tr class="border-t">
-        <td class="p-2"><?= number_format($income['amount'], 2) ?> MAD</td>
-        <td class="p-2"><?= htmlspecialchars($income['description']) ?></td>
-        <td class="p-2"><?= $income['date'] ?></td>
-        <td class="p-2">
-          <a href="delete.php?id=<?= $income['id'] ?>"
-             onclick="return confirm('Delete this income?')"
-             class="text-red-600">
-             Delete
-          </a>
-        </td>
-      </tr>
-    <?php endforeach; ?>
-  </tbody>
-</table>
+              <a href="delete.php?id=<?= $income['id'] ?>"
+                 onclick="return confirm('Delete this income?')"
+                 class="text-red-600 hover:underline">
+                Delete
+              </a>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-<!-- ADD INCOME MODAL -->
-<div id="addModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center">
-  <div class="bg-white p-6 rounded w-full max-w-md">
-    <h2 class="text-lg font-bold mb-4">Add Income</h2>
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+  <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">Add Income</h3>
+      <button id="closeAdd" class="text-gray-500 text-xl">&times;</button>
+    </div>
 
-    <form method="POST" action="store.php" class="space-y-3">
+    <form method="POST" action="store.php" class="space-y-4">
       <input name="amount" type="number" step="0.01" required
              placeholder="Amount"
              class="w-full border p-2 rounded">
@@ -79,8 +102,7 @@ $incomes = $incomeModel->getAllByUser($userId);
              class="w-full border p-2 rounded">
 
       <div class="flex justify-end gap-2">
-        <button type="button"
-                onclick="document.getElementById('addModal').classList.add('hidden')"
+        <button type="button" id="closeAdd2"
                 class="px-4 py-2 border rounded">
           Cancel
         </button>
@@ -92,6 +114,62 @@ $incomes = $incomeModel->getAllByUser($userId);
     </form>
   </div>
 </div>
+
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+  <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">Edit Income</h3>
+      <button id="closeEdit" class="text-gray-500 text-xl">&times;</button>
+    </div>
+
+    <form id="editForm" method="POST" class="space-y-4">
+      <input id="editAmount" name="amount" type="number" step="0.01" required
+             class="w-full border p-2 rounded">
+
+      <input id="editDescription" name="description" type="text" required
+             class="w-full border p-2 rounded">
+
+      <input id="editDate" name="date" type="date" required
+             class="w-full border p-2 rounded">
+
+      <div class="flex justify-end gap-2">
+        <button type="button" id="closeEdit2"
+                class="px-4 py-2 border rounded">
+          Cancel
+        </button>
+        <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded">
+          Update
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const show = el => el.classList.remove('hidden');
+const hide = el => el.classList.add('hidden');
+
+const addModal = document.getElementById('addModal');
+document.getElementById('openAddIncome').onclick = () => show(addModal);
+['closeAdd','closeAdd2'].forEach(id =>
+  document.getElementById(id).onclick = () => hide(addModal)
+);
+
+const editModal = document.getElementById('editModal');
+document.querySelectorAll('.edit-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.getElementById('editAmount').value = btn.dataset.amount;
+    document.getElementById('editDescription').value = btn.dataset.description;
+    document.getElementById('editDate').value = btn.dataset.date;
+    document.getElementById('editForm').action = `update.php?id=${btn.dataset.id}`;
+    show(editModal);
+  };
+});
+['closeEdit','closeEdit2'].forEach(id =>
+  document.getElementById(id).onclick = () => hide(editModal)
+);
+</script>
 
 </body>
 </html>

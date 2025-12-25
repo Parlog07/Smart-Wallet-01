@@ -1,30 +1,44 @@
 <?php
-require_once "../Includes/auth.php";
-require_once "../Includes/db.php";
+session_start();
 
-$user_id = $_SESSION["user_id"];
+require_once "../classes/Database.php";
+require_once "../classes/Income.php";
 
-$amount = $_POST["amount"];
-$description = $_POST["description"];
-$date = $_POST["date"];
-$card_id = $_POST["card_id"];
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../auth/login.php");
+    exit;
+}
 
-if (!$amount || !$date || !$card_id) {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header("Location: index.php");
+    exit;
+}
+
+$userId = $_SESSION['user_id'];
+
+$amount = $_POST['amount'] ?? null;
+$description = $_POST['description'] ?? '';
+$date = $_POST['date'] ?? null;
+
+if (!$amount || !$date) {
     die("Invalid input");
 }
 
-$stmt = $pdo->prepare("
-    INSERT INTO incomes (amount, description, date, user_id, card_id)
-    VALUES (?, ?, ?, ?, ?)
-");
+$db = new Database();
+$pdo = $db->connect();
 
-$stmt->execute([
+$incomeModel = new Income($pdo);
+
+$created = $incomeModel->create(
+    $userId,
     $amount,
     $description,
-    $date,
-    $user_id,
-    $card_id
-]);
+    $date
+);
 
-header("Location: index.php");
-exit;
+if ($created) {
+    header("Location: index.php");
+    exit;
+} else {
+    die("Failed to add income");
+}
