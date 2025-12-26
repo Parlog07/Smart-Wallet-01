@@ -1,175 +1,107 @@
 <?php
-session_start();
-
-require_once "../Classes/Database.php";
-require_once "../Classes/Expense.php";
-
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit;
-}
+require_once "../Includes/auth.php";
+require_once "../Includes/layout.php";
+require_once "../classes/Database.php";
+require_once "../classes/Expense.php";
 
 $db = new Database();
 $pdo = $db->connect();
 
 $expenseModel = new Expense($pdo);
-$userId = $_SESSION['user_id'];
-
+$userId = $_SESSION["user_id"];
 $expenses = $expenseModel->getAllByUser($userId);
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Expenses</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 min-h-screen">
+<h2 class="text-2xl font-bold mb-6">Expenses</h2>
 
-<div class="max-w-6xl mx-auto p-6">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Expenses</h1>
-    <button id="openAddExpense"
-            class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-      + Add Expense
-    </button>
-  </div>
+<button id="openAddExpense" class="bg-red-600 text-white px-4 py-2 rounded mb-4">
+  + Add Expense
+</button>
 
-  <div class="bg-white rounded-xl shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Amount</th>
-          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Description</th>
-          <th class="px-6 py-3 text-left text-sm font-medium text-gray-500">Date</th>
-          <th class="px-6 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-200">
-        <?php foreach ($expenses as $expense): ?>
-          <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 font-semibold text-gray-700">
-              <?= number_format($expense['amount'], 2) ?> MAD
-            </td>
-            <td class="px-6 py-4 text-gray-700">
-              <?= htmlspecialchars($expense['description']) ?>
-            </td>
-            <td class="px-6 py-4 text-gray-600">
-              <?= $expense['date'] ?>
-            </td>
-            <td class="px-6 py-4 text-right">
-              <button
-                class="edit-btn text-blue-600 hover:underline mr-4"
-                data-id="<?= $expense['id'] ?>"
-                data-amount="<?= $expense['amount'] ?>"
-                data-description="<?= htmlspecialchars($expense['description']) ?>"
-                data-date="<?= $expense['date'] ?>"
-              >
-                Edit
-              </button>
+<div class="bg-white rounded shadow overflow-hidden">
+  <table class="min-w-full divide-y">
+    <thead class="bg-red-100">
+      <tr>
+        <th class="px-4 py-2 text-left">Amount</th>
+        <th class="px-4 py-2 text-left">Description</th>
+        <th class="px-4 py-2 text-left">Date</th>
+        <th class="px-4 py-2 text-left">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($expenses as $e): ?>
+      <tr class="border-t">
+        <td class="px-4 py-2"><?= number_format($e["amount"], 2) ?> MAD</td>
+        <td class="px-4 py-2"><?= htmlspecialchars($e["description"]) ?></td>
+        <td class="px-4 py-2"><?= $e["date"] ?></td>
+        <td class="px-4 py-2">
+          <button
+            class="edit-btn text-blue-600 mr-3"
+            data-id="<?= $e["id"] ?>"
+            data-amount="<?= $e["amount"] ?>"
+            data-description="<?= htmlspecialchars($e["description"]) ?>"
+            data-date="<?= $e["date"] ?>"
+          >Edit</button>
 
-              <a href="delete.php?id=<?= $expense['id'] ?>"
-                 onclick="return confirm('Delete this expense?')"
-                 class="text-red-600 hover:underline">
-                Delete
-              </a>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-      </tbody>
-    </table>
-  </div>
+          <a href="delete.php?id=<?= $e["id"] ?>"
+             class="text-red-600"
+             onclick="return confirm('Delete this expense?')">
+            Delete
+          </a>
+        </td>
+      </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
 </div>
 
-<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-  <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold">Add Expense</h3>
-      <button id="closeAdd" class="text-gray-500 text-xl">&times;</button>
+<!-- ADD MODAL -->
+<div id="addModal" class="fixed inset-0 hidden bg-black/40 flex items-center justify-center">
+  <form method="POST" action="store.php" class="bg-white p-6 rounded w-96">
+    <h3 class="text-lg font-bold mb-4">Add Expense</h3>
+
+    <input name="amount" type="number" placeholder="amount" step="0.01" required class="w-full border p-2 mb-3">
+    <input name="description" type="text" placeholder="description" required class="w-full border p-2 mb-3">
+    <input name="date" type="date" required class="w-full border p-2 mb-4">
+
+    <div class="flex justify-end gap-2">
+      <button type="button" id="closeAdd" class="border px-4 py-2">Cancel</button>
+      <button class="bg-red-600 text-white px-4 py-2 rounded">Save</button>
     </div>
-
-    <form method="POST" action="store.php" class="space-y-4">
-      <input name="amount" type="number" step="0.01" required
-             placeholder="Amount"
-             class="w-full border p-2 rounded">
-
-      <input name="description" type="text" required
-             placeholder="Description"
-             class="w-full border p-2 rounded">
-
-      <input name="date" type="date" required
-             class="w-full border p-2 rounded">
-
-      <div class="flex justify-end gap-2">
-        <button type="button" id="closeAdd2"
-                class="px-4 py-2 border rounded">
-          Cancel
-        </button>
-        <button type="submit"
-                class="px-4 py-2 bg-red-600 text-white rounded">
-          Save
-        </button>
-      </div>
-    </form>
-  </div>
+  </form>
 </div>
 
-<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-  <div class="bg-white w-full max-w-md rounded-xl p-6 shadow-lg">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold">Edit Expense</h3>
-      <button id="closeEdit" class="text-gray-500 text-xl">&times;</button>
+<!-- EDIT MODAL -->
+<div id="editModal" class="fixed inset-0 hidden bg-black/40 flex items-center justify-center">
+  <form id="editForm" method="POST" class="bg-white p-6 rounded w-96">
+    <h3 class="text-lg font-bold mb-4">Edit Expense</h3>
+
+    <input id="editAmount" name="amount" type="number" step="0.01" required class="w-full border p-2 mb-3">
+    <input id="editDescription" name="description" type="text" required class="w-full border p-2 mb-3">
+    <input id="editDate" name="date" type="date" required class="w-full border p-2 mb-4">
+
+    <div class="flex justify-end gap-2">
+      <button type="button" id="closeEdit" class="border px-4 py-2">Cancel</button>
+      <button class="bg-blue-600 text-white px-4 py-2 rounded">Update</button>
     </div>
-
-    <form id="editForm" method="POST" class="space-y-4">
-      <input id="editAmount" name="amount" type="number" step="0.01" required
-             class="w-full border p-2 rounded">
-
-      <input id="editDescription" name="description" type="text" required
-             class="w-full border p-2 rounded">
-
-      <input id="editDate" name="date" type="date" required
-             class="w-full border p-2 rounded">
-
-      <div class="flex justify-end gap-2">
-        <button type="button" id="closeEdit2"
-                class="px-4 py-2 border rounded">
-          Cancel
-        </button>
-        <button type="submit"
-                class="px-4 py-2 bg-blue-600 text-white rounded">
-          Update
-        </button>
-      </div>
-    </form>
-  </div>
+  </form>
 </div>
 
 <script>
-const show = el => el.classList.remove('hidden');
-const hide = el => el.classList.add('hidden');
+const addModal = document.getElementById("addModal");
+const editModal = document.getElementById("editModal");
 
-const addModal = document.getElementById('addModal');
-document.getElementById('openAddExpense').onclick = () => show(addModal);
-['closeAdd','closeAdd2'].forEach(id =>
-  document.getElementById(id).onclick = () => hide(addModal)
-);
+document.getElementById("openAddExpense").onclick = () => addModal.classList.remove("hidden");
+document.getElementById("closeAdd").onclick = () => addModal.classList.add("hidden");
 
-const editModal = document.getElementById('editModal');
-document.querySelectorAll('.edit-btn').forEach(btn => {
+document.querySelectorAll(".edit-btn").forEach(btn => {
   btn.onclick = () => {
-    document.getElementById('editAmount').value = btn.dataset.amount;
-    document.getElementById('editDescription').value = btn.dataset.description;
-    document.getElementById('editDate').value = btn.dataset.date;
-    document.getElementById('editForm').action = `update.php?id=${btn.dataset.id}`;
-    show(editModal);
+    editModal.classList.remove("hidden");
+    document.getElementById("editAmount").value = btn.dataset.amount;
+    document.getElementById("editDescription").value = btn.dataset.description;
+    document.getElementById("editDate").value = btn.dataset.date;
+    document.getElementById("editForm").action = "update.php?id=" + btn.dataset.id;
   };
 });
-['closeEdit','closeEdit2'].forEach(id =>
-  document.getElementById(id).onclick = () => hide(editModal)
-);
+document.getElementById("closeEdit").onclick = () => editModal.classList.add("hidden");
 </script>
-
-</body>
-</html>

@@ -1,27 +1,13 @@
 <?php
-session_start();
-
+require_once "../Includes/auth.php";
 require_once "../classes/Database.php";
 require_once "../classes/Expense.php";
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit;
-}
-
-$userId = $_SESSION['user_id'];
-$id = $_GET['id'] ?? null;
-
-if (!$id) {
-    header("Location: index.php");
-    exit;
-}
-
 $db = new Database();
 $pdo = $db->connect();
-
 $expenseModel = new Expense($pdo);
-$expenseModel->delete($id, $userId);
+
+$expenseModel->delete($_GET["id"], $_SESSION["user_id"]);
 
 header("Location: index.php");
 exit;

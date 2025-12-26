@@ -13,41 +13,41 @@
 
   <!-- SIDEBAR -->
   <aside class="w-72 bg-white shadow-lg p-6">
-    <a href="/php/Income-Expenses-Tracker/index.php" class="block mb-8">
+    <a href="/php/Smart-Wallet-01/index.php" class="block mb-8">
       <h1 class="text-2xl font-extrabold text-blue-600">Smart Wallet</h1>
     </a>
 
     <nav class="space-y-2">
 
       <!-- Dashboard -->
-      <a href="/php/Income-Expenses-Tracker/index.php"
+      <a href="/php/Smart-Wallet-01/index.php"
          class="flex items-center gap-3 px-3 py-2 rounded hover:bg-blue-50">
         🏠 Dashboard
       </a>
 
       <!-- Incomes -->
-      <a href="/php/Income-Expenses-Tracker/Incomes/index.php"
+      <a href="/php/Smart-Wallet-01/Incomes/index.php"
          class="flex items-center gap-3 px-3 py-2 rounded hover:bg-green-50">
         ➕ Incomes
       </a>
 
       <!-- Expenses -->
-      <a href="/php/Income-Expenses-Tracker/Expenses/index.php"
+      <a href="/php/Smart-Wallet-01/Expenses/index.php"
          class="flex items-center gap-3 px-3 py-2 rounded hover:bg-red-50">
         ➖ Expenses
       </a>
-      <a href="/php/Income-Expenses-Tracker/Transfers/index.php"
+      <a href="/php/Smart-Wallet-01/Transfers/index.php"
           class="flex items-center gap-3 rounded px-3 py-2 hover:bg-purple-50">
           🔁 Transfers
       </a>
-      <a href="/php/Income-Expenses-Tracker/Categories/index.php"
+      <a href="/php/Smart-Wallet-01/Categories/index.php"
         class="flex items-center gap-3 rounded px-3 py-2 hover:bg-blue-50">
         📂 Categories
       </a>
 
 
       <!-- Logout -->
-      <a href="/php/Income-Expenses-Tracker/auth/logout.php"
+      <a href="/php/Smart-Wallet-01/auth/logout.php"
          class="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-200 text-red-600">
         🚪 Logout
       </a>
