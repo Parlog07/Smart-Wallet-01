@@ -9,22 +9,40 @@ class Income
         $this->pdo = $pdo;
     }
 
-    public function getAllByUser($userId)
+    public function getAllByUser($userId, $categoryId = null)
     {
-        $stmt = $this->pdo->prepare(
-            "SELECT 
-                i.id,
-                i.amount,
-                i.description,
-                i.date,
-                i.category_id,
-                c.name AS category
-             FROM incomes i
-             JOIN categories c ON i.category_id = c.id
-             WHERE i.user_id = ?
-             ORDER BY i.date DESC"
-        );
-        $stmt->execute([$userId]);
+        if ($categoryId) {
+            $stmt = $this->pdo->prepare(
+                "SELECT 
+                    i.id,
+                    i.amount,
+                    i.description,
+                    i.date,
+                    i.category_id,
+                    c.name AS category
+                 FROM incomes i
+                 JOIN categories c ON i.category_id = c.id
+                 WHERE i.user_id = ? AND i.category_id = ?
+                 ORDER BY i.date DESC"
+            );
+            $stmt->execute([$userId, $categoryId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                "SELECT 
+                    i.id,
+                    i.amount,
+                    i.description,
+                    i.date,
+                    i.category_id,
+                    c.name AS category
+                 FROM incomes i
+                 JOIN categories c ON i.category_id = c.id
+                 WHERE i.user_id = ?
+                 ORDER BY i.date DESC"
+            );
+            $stmt->execute([$userId]);
+        }
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -68,7 +86,7 @@ class Income
             "SELECT COALESCE(SUM(amount),0) FROM incomes WHERE user_id = ?"
         );
         $stmt->execute([$userId]);
-        return (float) $stmt->fetchColumn();
+        return (float)$stmt->fetchColumn();
     }
 
     public function getMonthlyTotals($userId)

@@ -12,11 +12,24 @@ $incomeModel = new Income($pdo);
 $categoryModel = new Category($pdo);
 
 $userId = $_SESSION["user_id"];
-$incomes = $incomeModel->getAllByUser($userId);
+$categoryId = $_GET["category"] ?? null;
+
 $categories = $categoryModel->getAll();
+$incomes = $incomeModel->getAllByUser($userId, $categoryId);
 ?>
 
 <h2 class="text-2xl font-bold mb-6">Incomes</h2>
+
+<form method="GET" class="mb-4">
+  <select name="category" onchange="this.form.submit()" class="border p-2 rounded">
+    <option value="">All categories</option>
+    <?php foreach ($categories as $c): ?>
+      <option value="<?= $c['id'] ?>" <?= ($categoryId == $c['id']) ? 'selected' : '' ?>>
+        <?= htmlspecialchars($c['name']) ?>
+      </option>
+    <?php endforeach; ?>
+  </select>
+</form>
 
 <button id="openAddIncome" class="bg-green-600 text-white px-4 py-2 rounded mb-4">
   + Add Income
