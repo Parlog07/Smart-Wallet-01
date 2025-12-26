@@ -3,13 +3,17 @@ require_once "../Includes/auth.php";
 require_once "../Includes/layout.php";
 require_once "../classes/Database.php";
 require_once "../classes/Income.php";
+require_once "../classes/Category.php";
 
 $db = new Database();
 $pdo = $db->connect();
 
 $incomeModel = new Income($pdo);
+$categoryModel = new Category($pdo);
+
 $userId = $_SESSION["user_id"];
 $incomes = $incomeModel->getAllByUser($userId);
+$categories = $categoryModel->getAll();
 ?>
 
 <h2 class="text-2xl font-bold mb-6">Incomes</h2>
@@ -24,6 +28,7 @@ $incomes = $incomeModel->getAllByUser($userId);
       <tr>
         <th class="px-4 py-2 text-left">Amount</th>
         <th class="px-4 py-2 text-left">Description</th>
+        <th class="px-4 py-2 text-left">Category</th>
         <th class="px-4 py-2 text-left">Date</th>
         <th class="px-4 py-2 text-left">Actions</th>
       </tr>
@@ -33,6 +38,7 @@ $incomes = $incomeModel->getAllByUser($userId);
       <tr class="border-t">
         <td class="px-4 py-2"><?= number_format($i["amount"], 2) ?> MAD</td>
         <td class="px-4 py-2"><?= htmlspecialchars($i["description"]) ?></td>
+        <td class="px-4 py-2"><?= htmlspecialchars($i["category"]) ?></td>
         <td class="px-4 py-2"><?= $i["date"] ?></td>
         <td class="px-4 py-2">
           <button
@@ -41,6 +47,7 @@ $incomes = $incomeModel->getAllByUser($userId);
             data-amount="<?= $i["amount"] ?>"
             data-description="<?= htmlspecialchars($i["description"]) ?>"
             data-date="<?= $i["date"] ?>"
+            data-category="<?= $i["category_id"] ?>"
           >Edit</button>
 
           <a href="delete.php?id=<?= $i["id"] ?>"
@@ -55,13 +62,19 @@ $incomes = $incomeModel->getAllByUser($userId);
   </table>
 </div>
 
-<!-- ADD MODAL -->
 <div id="addModal" class="fixed inset-0 hidden bg-black/40 flex items-center justify-center">
   <form method="POST" action="store.php" class="bg-white p-6 rounded w-96">
     <h3 class="text-lg font-bold mb-4">Add Income</h3>
 
-    <input name="amount" type="number" placeholder="amount" step="0.01" required class="w-full border p-2 mb-3">
-    <input name="description" type="text" placeholder="description" required class="w-full border p-2 mb-3">
+    <select name="category_id" required class="w-full border p-2 mb-3">
+      <option value="">Select category</option>
+      <?php foreach ($categories as $c): ?>
+        <option value="<?= $c["id"] ?>"><?= htmlspecialchars($c["name"]) ?></option>
+      <?php endforeach; ?>
+    </select>
+
+    <input name="amount" type="number" step="0.01" required class="w-full border p-2 mb-3">
+    <input name="description" type="text" required class="w-full border p-2 mb-3">
     <input name="date" type="date" required class="w-full border p-2 mb-4">
 
     <div class="flex justify-end gap-2">
@@ -71,10 +84,15 @@ $incomes = $incomeModel->getAllByUser($userId);
   </form>
 </div>
 
-<!-- EDIT MODAL -->
 <div id="editModal" class="fixed inset-0 hidden bg-black/40 flex items-center justify-center">
   <form id="editForm" method="POST" class="bg-white p-6 rounded w-96">
     <h3 class="text-lg font-bold mb-4">Edit Income</h3>
+
+    <select id="editCategory" name="category_id" required class="w-full border p-2 mb-3">
+      <?php foreach ($categories as $c): ?>
+        <option value="<?= $c["id"] ?>"><?= htmlspecialchars($c["name"]) ?></option>
+      <?php endforeach; ?>
+    </select>
 
     <input id="editAmount" name="amount" type="number" step="0.01" required class="w-full border p-2 mb-3">
     <input id="editDescription" name="description" type="text" required class="w-full border p-2 mb-3">
@@ -100,9 +118,10 @@ document.querySelectorAll(".edit-btn").forEach(btn => {
     document.getElementById("editAmount").value = btn.dataset.amount;
     document.getElementById("editDescription").value = btn.dataset.description;
     document.getElementById("editDate").value = btn.dataset.date;
+    document.getElementById("editCategory").value = btn.dataset.category;
     document.getElementById("editForm").action = "update.php?id=" + btn.dataset.id;
   };
 });
+
 document.getElementById("closeEdit").onclick = () => editModal.classList.add("hidden");
 </script>
-

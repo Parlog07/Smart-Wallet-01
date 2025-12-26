@@ -47,4 +47,23 @@ class Expense {
         );
         return $stmt->execute([$id, $userId]);
     }
+    public function getTotalByUser($userId) {
+    $stmt = $this->pdo->prepare(
+        "SELECT COALESCE(SUM(amount),0) FROM expenses WHERE user_id = ?"
+    );
+    $stmt->execute([$userId]);
+    return (float)$stmt->fetchColumn();
+}
+
+public function getMonthlyTotals($userId) {
+    $stmt = $this->pdo->prepare(
+        "SELECT MONTH(date) AS month, SUM(amount) AS total
+         FROM expenses
+         WHERE user_id = ?
+         GROUP BY MONTH(date)"
+    );
+    $stmt->execute([$userId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
 }

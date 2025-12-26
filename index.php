@@ -1,77 +1,25 @@
 <?php
 require_once "Includes/auth.php";
-require_once "Includes/db.php";
+require_once "Includes/layout.php";
+require_once "classes/Database.php";
+require_once "classes/Income.php";
+require_once "classes/Expense.php";
+
+$db = new Database();
+$pdo = $db->connect();
+
+$incomeModel = new Income($pdo);
+$expenseModel = new Expense($pdo);
 
 $user_id = $_SESSION["user_id"];
 
-// TOTAL INCOME
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) AS total_income 
-    FROM incomes 
-    WHERE user_id = ?
-");
-$stmt->execute([$user_id]);
-$total_income = $stmt->fetch()["total_income"] ?? 0;
-
-// TOTAL EXPENSE
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) AS total_expense 
-    FROM expenses 
-    WHERE user_id = ?
-");
-$stmt->execute([$user_id]);
-$total_expense = $stmt->fetch()["total_expense"] ?? 0;
-
-// BALANCE
+$total_income = $incomeModel->getTotalByUser($user_id);
+$total_expense = $expenseModel->getTotalByUser($user_id);
 $balance = $total_income - $total_expense;
 
-// MONTHLY INCOME (CURRENT MONTH)
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) AS monthly_income 
-    FROM incomes 
-    WHERE user_id = ?
-      AND MONTH(date) = MONTH(CURRENT_DATE())
-      AND YEAR(date) = YEAR(CURRENT_DATE())
-");
-$stmt->execute([$user_id]);
-$monthly_income = $stmt->fetch()["monthly_income"] ?? 0;
+$incomeRows = $incomeModel->getMonthlyTotals($user_id);
+$expenseRows = $expenseModel->getMonthlyTotals($user_id);
 
-// MONTHLY EXPENSE (CURRENT MONTH)
-$stmt = $pdo->prepare("
-    SELECT SUM(amount) AS monthly_expense 
-    FROM expenses 
-    WHERE user_id = ?
-      AND MONTH(date) = MONTH(CURRENT_DATE())
-      AND YEAR(date) = YEAR(CURRENT_DATE())
-");
-$stmt->execute([$user_id]);
-$monthly_expense = $stmt->fetch()["monthly_expense"] ?? 0;
-
-/* =========================
-   CHART DATA (PER MONTH)
-   ========================= */
-
-// Incomes per month
-$stmt = $pdo->prepare("
-    SELECT MONTH(date) AS month, SUM(amount) AS total
-    FROM incomes
-    WHERE user_id = ?
-    GROUP BY MONTH(date)
-");
-$stmt->execute([$user_id]);
-$incomeRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Expenses per month
-$stmt = $pdo->prepare("
-    SELECT MONTH(date) AS month, SUM(amount) AS total
-    FROM expenses
-    WHERE user_id = ?
-    GROUP BY MONTH(date)
-");
-$stmt->execute([$user_id]);
-$expenseRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Prepare arrays
 $incomeData = array_fill(1, 12, 0);
 $expenseData = array_fill(1, 12, 0);
 
@@ -83,18 +31,14 @@ foreach ($expenseRows as $row) {
     $expenseData[(int)$row["month"]] = (float)$row["total"];
 }
 
-// Month labels
 $monthLabels = [];
 for ($m = 1; $m <= 12; $m++) {
     $monthLabels[] = date("M", mktime(0, 0, 0, $m, 1));
 }
-
-include "Includes/layout.php";
 ?>
 
 <h1 class="text-3xl font-bold mb-8">Dashboard Overview</h1>
 
-<!-- MAIN CARDS -->
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
     <div class="bg-white rounded-xl p-6 shadow border-l-4 border-green-500">
@@ -120,7 +64,6 @@ include "Includes/layout.php";
 
 </div>
 
-<!-- CHART -->
 <div class="bg-white p-8 rounded-xl shadow mb-10">
     <h2 class="text-xl font-bold mb-4">Monthly Overview (Income vs Expense)</h2>
     <canvas id="financeChart" height="120"></canvas>

@@ -150,3 +150,10 @@ ADD category_id INT NOT NULL;
 ALTER TABLE expenses
 ADD category_id INT NOT NULL;
 DESCRIBE expenses;
+ALTER TABLE incomes
+ADD category_id INT NOT NULL;
+
+ALTER TABLE incomes
+ADD CONSTRAINT fk_incomes_category
+FOREIGN KEY (category_id) REFERENCES categories(id);
+DESCRIBE incomes;
