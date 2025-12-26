@@ -12,11 +12,24 @@ $expenseModel = new Expense($pdo);
 $categoryModel = new Category($pdo);
 
 $userId = $_SESSION["user_id"];
-$expenses = $expenseModel->getAllByUser($userId);
+$categoryId = $_GET["category"] ?? null;
+
 $categories = $categoryModel->getAll();
+$expenses = $expenseModel->getAllByUser($userId, $categoryId);
 ?>
 
 <h2 class="text-2xl font-bold mb-6">Expenses</h2>
+
+<form method="GET" class="mb-4">
+  <select name="category" onchange="this.form.submit()" class="border p-2 rounded">
+    <option value="">All categories</option>
+    <?php foreach ($categories as $c): ?>
+      <option value="<?= $c['id'] ?>" <?= ($categoryId == $c['id']) ? 'selected' : '' ?>>
+        <?= htmlspecialchars($c['name']) ?>
+      </option>
+    <?php endforeach; ?>
+  </select>
+</form>
 
 <button id="openAddExpense" class="bg-red-600 text-white px-4 py-2 rounded mb-4">
   + Add Expense
@@ -62,7 +75,6 @@ $categories = $categoryModel->getAll();
   </table>
 </div>
 
-<!-- ADD MODAL -->
 <div id="addModal" class="fixed inset-0 hidden bg-black/40 flex items-center justify-center">
   <form method="POST" action="store.php" class="bg-white p-6 rounded w-96">
     <h3 class="text-lg font-bold mb-4">Add Expense</h3>
@@ -70,14 +82,12 @@ $categories = $categoryModel->getAll();
     <select name="category_id" required class="w-full border p-2 mb-3">
       <option value="">Select category</option>
       <?php foreach ($categories as $c): ?>
-        <option value="<?= $c["id"] ?>">
-          <?= htmlspecialchars($c["name"]) ?>
-        </option>
+        <option value="<?= $c["id"] ?>"><?= htmlspecialchars($c["name"]) ?></option>
       <?php endforeach; ?>
     </select>
 
-    <input name="amount" type="number" placeholder="amount" step="0.01" required class="w-full border p-2 mb-3">
-    <input name="description" type="text" placeholder="description" required class="w-full border p-2 mb-3">
+    <input name="amount" type="number" step="0.01" required class="w-full border p-2 mb-3">
+    <input name="description" type="text" required class="w-full border p-2 mb-3">
     <input name="date" type="date" required class="w-full border p-2 mb-4">
 
     <div class="flex justify-end gap-2">
@@ -87,18 +97,9 @@ $categories = $categoryModel->getAll();
   </form>
 </div>
 
-<!-- EDIT MODAL -->
 <div id="editModal" class="fixed inset-0 hidden bg-black/40 flex items-center justify-center">
   <form id="editForm" method="POST" class="bg-white p-6 rounded w-96">
     <h3 class="text-lg font-bold mb-4">Edit Expense</h3>
-
-    <select id="editCategory" name="category_id" required class="w-full border p-2 mb-3">
-      <?php foreach ($categories as $c): ?>
-        <option value="<?= $c["id"] ?>">
-          <?= htmlspecialchars($c["name"]) ?>
-        </option>
-      <?php endforeach; ?>
-    </select>
 
     <input id="editAmount" name="amount" type="number" step="0.01" required class="w-full border p-2 mb-3">
     <input id="editDescription" name="description" type="text" required class="w-full border p-2 mb-3">
@@ -124,7 +125,6 @@ document.querySelectorAll(".edit-btn").forEach(btn => {
     document.getElementById("editAmount").value = btn.dataset.amount;
     document.getElementById("editDescription").value = btn.dataset.description;
     document.getElementById("editDate").value = btn.dataset.date;
-    document.getElementById("editCategory").value = btn.dataset.category;
     document.getElementById("editForm").action = "update.php?id=" + btn.dataset.id;
   };
 });
