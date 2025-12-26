@@ -8,30 +8,37 @@ class Expense {
 
     public function getAllByUser($userId) {
         $stmt = $this->pdo->prepare(
-            "SELECT id, amount, description, date
-             FROM expenses
-             WHERE user_id = ?
-             ORDER BY date DESC"
+            "SELECT 
+                e.id,
+                e.amount,
+                e.description,
+                e.date,
+                e.category_id,
+                c.name AS category
+             FROM expenses e
+             JOIN categories c ON e.category_id = c.id
+             WHERE e.user_id = ?
+             ORDER BY e.date DESC"
         );
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create($userId, $amount, $description, $date) {
+    public function create($userId, $categoryId, $amount, $description, $date) {
         $stmt = $this->pdo->prepare(
-            "INSERT INTO expenses (user_id, amount, description, date)
-             VALUES (?, ?, ?, ?)"
+            "INSERT INTO expenses (user_id, category_id, amount, description, date)
+             VALUES (?, ?, ?, ?, ?)"
         );
-        return $stmt->execute([$userId, $amount, $description, $date]);
+        return $stmt->execute([$userId, $categoryId, $amount, $description, $date]);
     }
 
-    public function update($id, $userId, $amount, $description, $date) {
+    public function update($id, $userId, $categoryId, $amount, $description, $date) {
         $stmt = $this->pdo->prepare(
             "UPDATE expenses
-             SET amount = ?, description = ?, date = ?
+             SET category_id = ?, amount = ?, description = ?, date = ?
              WHERE id = ? AND user_id = ?"
         );
-        return $stmt->execute([$amount, $description, $date, $id, $userId]);
+        return $stmt->execute([$categoryId, $amount, $description, $date, $id, $userId]);
     }
 
     public function delete($id, $userId) {

@@ -145,3 +145,8 @@ ALTER TABLE expenses DROP COLUMN card_id;
 ALTER TABLE expenses DROP COLUMN category_id;
 DESCRIBE expenses;
 ALTER TABLE expenses DROP FOREIGN KEY fk_expenses_category;
+ALTER TABLE expenses
+ADD category_id INT NOT NULL;
+ALTER TABLE expenses
+ADD category_id INT NOT NULL;
+DESCRIBE expenses;
